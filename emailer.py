@@ -1,6 +1,8 @@
 import smtplib
+import re
+import redis
 
-class Email_module:
+class Emailer_module:
 
 	"""
 	Function description : 
@@ -32,6 +34,24 @@ class Email_module:
 		    server.sendmail(details['sender'],details['recipients'],msg)
 		    #server.quit()
 		    server.close()
-		    print 'mail sent'
+		    return 'mail sent'
+		except smtplib.SMTPAuthenticationError:
+			return 'invalid username-password combination'
+
 		except:
-			print 'failed to send mail'
+			return 'failed to send mail'
+	def parse(self,input):
+		r = redis.StrictRedis(host='localhost',port=6379,db=0)
+		method_checker = re.match(r'banana\s+emailer\s+(\S*)',input)
+		if(method_checker):
+			if(method_checker.group(1) == 'send'):
+				""" syntax : banana emailer send <sending email> <receiving email/s> <subject in quotes> <body in quotes> <password in quotes> """
+				parser = re.match(r'banana\s+emailer\s+send\s+([^@]+@[^@]+\.[^@]+)\s+([^@]+@[^@]+\.[^@]+)\s+"(.*)"\s+"(.*)"\s+"(.*)"',input)
+				if parser:
+					receiving = parser.group(2).split(',')
+					details = {'sender' : parser.group(1),'recipients' : receiving,'subject' : parser.group(3),'text' : parser.group(4),'username' : parser.group(1),'password' : parser.group(5)}
+					#print(details)
+					return self.send_email(details)
+			else:
+			    return 'invalid command'			
+

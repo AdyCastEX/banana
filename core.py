@@ -2,6 +2,7 @@
 import redis
 import threading
 import time
+import sys
 from basecamp_module import Basecamp_module
 
 #################
@@ -46,6 +47,20 @@ def parse_command(input):
 
         elif tokens[1] == "basecamp":
             response = basecampFunction(tokens)
+        else:
+            try:
+                #module classes have a naming convetion of <Name>_module
+                class_name = (tokens[1]+"_module").capitalize()
+                #dynamically import the class from the module
+                importer = __import__(tokens[1],{},{},class_name)
+                #get the actual class for instantaition
+                module = getattr(importer,class_name)
+                instance = module()
+                #parse the given comand to perform the operation
+                response = instance.parse(input)
+            except:
+                response = error['error_unknown']
+
 
     elif tokens[0] == "exit":
         response = "exit"
